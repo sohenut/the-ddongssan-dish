@@ -1,0 +1,12 @@
+# /netlify.toml
+
+[build]
+  # 함수가 들어있는 폴더를 지정합니다.
+  functions = "netlify/functions"
+
+[[redirects]]
+  # /api/map-key 라는 주소로 요청이 오면,
+  from = "/api/map-key"
+  # 실제로는 get-kakao-key 함수를 실행하라는 의미입니다.
+  to = "/.netlify/functions/get-kakao-key"
+  status = 200
