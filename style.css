@@ -407,7 +407,8 @@ header p {
     display: flex;
     align-items: center;
     transform: translateY(-50%);
-    transition: left 0.1s linear;
+    /* ✅ 수정: top 속성도 부드럽게 변하도록 transition 추가 */
+    transition: left 0.1s linear, top 0.3s ease-in-out;
     z-index: 3;
     font-size: 2rem;
     height: 40px;
@@ -436,12 +437,6 @@ header p {
     align-items: center;
     justify-content: center;
     transform: scaleX(-1);
-}
-
-/* ✅ 추가된 부분: 힘 부스트 시각 효과 */
-.horse.strength-boost-effect .horse-emoji {
-    animation: strength-boost 0.5s ease-in-out;
-    box-shadow: 0 0 15px rgba(230, 126, 34, 0.8);
 }
 
 .horse-color-0 .horse-emoji { background-color: #e74c3c; color: white; }
@@ -548,9 +543,32 @@ header p {
     100% { box-shadow: 0 0 5px #f1c40f; }
 }
 
-/* ✅ 추가된 부분: 힘 부스트 애니메이션 */
-@keyframes strength-boost {
-    0% { transform: scale(1.0) translateX(0); }
-    25% { transform: scale(1.2) translateX(-5px); }
-    100% { transform: scale(1.0) translateX(0); }
+/* ✅ 추가된 부분: 의외성 부스트 시각 효과 */
+.horse.unexpected-boost-effect .horse-emoji {
+    animation: unexpected-boost 0.5s ease-in-out;
+}
+
+@keyframes unexpected-boost {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(231, 76, 60, 0.9);
+        transform: scale(1.1);
+    }
+    50% {
+        box-shadow: 0 0 35px rgba(241, 196, 15, 0.9);
+        transform: scale(1.25);
+    }
+}
+
+.obstacle {
+    position: absolute;
+    transform: translateY(-50%);
+    z-index: 3;
+    opacity: 0.8;
+    
+    /* ✅ 수정: 크기를 직접 지정하고, 배경에 SVG 이미지를 삽입 */
+    width: 1.8rem;
+    height: 1.8rem;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNiAzNiI+PGNpcmNsZSBmaWxsPSIjOUNBNEFGIiBjeD0iMjYuNSIgY3k9IjI2LjUiIHI9IjcuNSIvPjxjaXJjbGUgZmlsbD0iI0E5QkJDMyIgY3g9IjE1LjkiIGN5PSIyOC44IiByPSI3LjIiLz48Y2lyY2xlIGZpbGw9IiM4QzkwOTUiIGN4PSI5LjUiIGN5PSIxOC41IiByPSI5LjUiLz48Y2lyY2xlIGZpbGw9IiNBN0I4QkYiIGN4PSIyMi41IiBjeT0iOS41IiByPSI5LjUiLz48L3N2Zz4=');
+    background-size: contain;
+    background-repeat: no-repeat;
 }

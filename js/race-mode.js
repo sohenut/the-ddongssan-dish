@@ -2,100 +2,145 @@ import { DOM } from './config.js';
 import { displayResult } from './ui.js';
 
 let racers = [];
+let lanesData = []; // 각 레인의 장애물 정보를 담을 배열
 let raceInterval;
-let isFirstTick = true;
-let raceTickCounter = 0; // ✅ 턴을 세는 카운터 변수 추가
+let raceTickCounter = 0;
 
 // --- 게임 밸런스 상수 정의 ---
-const STAT_TOTAL_POINTS = 10;     // 분배 가능한 총 스탯 포인트
-
-// 위치 관련
-const LANE_HEIGHT = 45;
+const STAT_TOTAL_POINTS = 10;
 const START_LINE_PERCENT = 5;
 const FINISH_LINE_PERCENT = 95;
 const HORSE_WIDTH_PX = 35;
+const LANE_HEIGHT = 45;
 
-// 스탯 가중치
-const BASE_SPEED = 0.25;
-const SPEED_MODIFIER = 0.07;
-const ACCEL_MODIFIER = 0.005;
-const STRENGTH_MODIFIER = 1.5;      // 힘 1당 첫 턴에 추가되는 '순간 이동' 거리
-const INTELLIGENCE_MODIFIER = 0.08;
-const UNEXPECTED_MODIFIER = 0.03;
-const PENALTY_CHANCE = 0.05;
-const ACCEL_START_TICK = 50; // ✅ 가속도가 붙기 시작하는 턴 (예: 50 = 5초 후)
+// 각 스탯의 영향력을 조절하는 계수
+const STRENGTH_START_BONUS = 1.5;
+const BASE_SPEED_PER_TICK = 0.2;
+const SPEED_MODIFIER = 0.05;
+const ACCEL_MODIFIER = 0.0007;
+
+// 지능 스탯 (회피 기동) 관련 상수
+const INTELLIGENCE_DEFENSE = 0.01;
+const PENALTY_SPEED_RATIO = 5.0;
+const BASE_PENALTY_CHANCE = 0.05;
+const INTELLIGENCE_LOOKAHEAD_DISTANCE = 5.0;
+const LANE_CHANGE_CHANCE_PER_INTELLIGENCE = 0.10; 
+
+// 힘 스탯 (장애물 돌파) 관련 상수
+const STRENGTH_JUMP_BONUS = 0.5;
+
+// 의외성 스탯 관련 상수
+const UNEXPECTED_MODIFIER = 0.05;
+
+// 장애물 관련 상수
+const OBSTACLES_PER_LANE = 3;
+const OBSTACLE_ZONE_START = 20;
+const OBSTACLE_ZONE_END = 85;
+const MAX_STUN_DURATION_TICKS = 20;
+const STUN_REDUCTION_PER_STRENGTH = 4;
 
 // --- 핵심 게임 로직 ---
-
 function runRace(actualFinishPosition) {
-    const minIntelligence = Math.min(...racers.map(r => r.stats.intelligence));
-    const sortedRacersForRank = [...racers].sort((a, b) => b.position - a.position);
-    const lastPlacePosition = sortedRacersForRank[sortedRacersForRank.length - 1].position;
+    raceTickCounter++;
 
-    racers.forEach(racer => {
-        const maxSpeed = BASE_SPEED + (racer.stats.speed * SPEED_MODIFIER);
+    const sortedRacers = [...racers].sort((a, b) => b.position - a.position);
+    const leadPosition = sortedRacers[0].position;
+    const lastPlacePosition = sortedRacers[racers.length - 1].position;
 
-        // ✅ 현재 턴이 ACCEL_START_TICK 이상일 때만 가속도를 적용
-        if (raceTickCounter >= ACCEL_START_TICK) {
-            racer.currentSpeed += racer.stats.acceleration * ACCEL_MODIFIER;
+    racers.forEach((racer, index) => {
+        if (racer.stunnedUntilTick && raceTickCounter < racer.stunnedUntilTick) {
+            return;
         }
 
-        if (racer.currentSpeed > maxSpeed) {
-            racer.currentSpeed = maxSpeed;
-        }
+        const oldPosition = racer.position;
 
-        let movementThisTick = racer.currentSpeed;
+        // 지능 스탯의 '회피 기동' 로직
+        const upcomingObstacle = lanesData[racer.currentLane].obstacles.find(obs => 
+            !obs.cleared && obs.position > racer.position && (obs.position - racer.position) < INTELLIGENCE_LOOKAHEAD_DISTANCE
+        );
 
-        if (isFirstTick) {
-            const strengthBoost = racer.stats.strength * STRENGTH_MODIFIER;
-            movementThisTick += strengthBoost;
-            
-            if (racer.stats.strength > 0) {
-                const horseElement = document.getElementById(`horse-${racer.originalIndex}`);
-                if (horseElement) {
-                    horseElement.classList.add('strength-boost-effect');
-                    setTimeout(() => {
-                        horseElement.classList.remove('strength-boost-effect');
-                    }, 500);
+        if (upcomingObstacle) {
+            const changeChance = racer.stats.intelligence * LANE_CHANGE_CHANCE_PER_INTELLIGENCE;
+            if (Math.random() < changeChance) {
+                let clearLaneIndex = -1;
+                for (let i = 0; i < lanesData.length; i++) {
+                    if (i === racer.currentLane) continue;
+                    const isLaneClear = !lanesData[i].obstacles.some(obs => 
+                        !obs.cleared && Math.abs(obs.position - upcomingObstacle.position) < 5
+                    );
+                    if (isLaneClear) {
+                        clearLaneIndex = i;
+                        break;
+                    }
+                }
+
+                if (clearLaneIndex !== -1) {
+                    racer.currentLane = clearLaneIndex;
+                    const horseElement = document.getElementById(`horse-${racer.originalIndex}`);
+                    if (horseElement) {
+                        const totalRacersHeight = racers.length * LANE_HEIGHT;
+                        const verticalOffset = (DOM.camera.offsetHeight - totalRacersHeight) / 2;
+                        horseElement.style.top = `${verticalOffset + (clearLaneIndex * LANE_HEIGHT) + (LANE_HEIGHT / 2)}px`;
+                    }
+                    // ✅ 수정: 회피한 장애물은 모두에게 '제거됨'으로 처리
+                    upcomingObstacle.cleared = true; 
                 }
             }
         }
+        
+        if (raceTickCounter === 1) {
+            racer.position += racer.stats.strength * STRENGTH_START_BONUS;
+        }
 
-        if (racer.position === lastPlacePosition) {
-            if (Math.random() < (racer.stats.unexpectedness * UNEXPECTED_MODIFIER)) {
-                movementThisTick *= 2;
+        let potentialMovement = 0;
+        const baseMovement = BASE_SPEED_PER_TICK + racer.stats.speed * SPEED_MODIFIER;
+        const accelerationBonus = raceTickCounter * racer.stats.acceleration * ACCEL_MODIFIER;
+        potentialMovement = baseMovement + accelerationBonus;
+
+        if (racer.position < leadPosition) {
+            if (Math.random() < racer.stats.unexpectedness * UNEXPECTED_MODIFIER) {
+                potentialMovement *= (racer.position === lastPlacePosition) ? 4 : 2;
+                const horseElement = document.getElementById(`horse-${racer.originalIndex}`);
+                if (horseElement) {
+                    horseElement.classList.add('unexpected-boost-effect');
+                    setTimeout(() => horseElement.classList.remove('unexpected-boost-effect'), 500);
+                }
             }
         }
+        
+        racer.position += potentialMovement;
+        
+        lanesData[racer.currentLane].obstacles.forEach((obstacle, obsIndex) => {
+            // ✅ 수정: 장애물 자체의 cleared 상태를 체크
+            if (!obstacle.cleared && oldPosition < obstacle.position && racer.position >= obstacle.position) {
+                const obstacleEl = document.getElementById(obstacle.id);
+                
+                if (racer.stats.strength >= 5) {
+                    racer.position += racer.stats.strength * STRENGTH_JUMP_BONUS;
+                } else {
+                    racer.stunnedUntilTick = raceTickCounter + (MAX_STUN_DURATION_TICKS - (racer.stats.strength * STUN_REDUCTION_PER_STRENGTH));
+                    racer.position = obstacle.position;
+                }
+                
+                // ✅ 수정: 한번 부딪힌 장애물은 모두에게 '제거됨'으로 처리
+                obstacle.cleared = true;
+                if (obstacleEl) obstacleEl.style.display = 'none';
+            }
+        });
 
-        const consistency = 1 - (Math.random() * (1 - (racer.stats.intelligence * INTELLIGENCE_MODIFIER)));
-        movementThisTick *= consistency;
-
-        const intelligence = racer.stats.intelligence;
-        const isEligibleForPenalty = (intelligence < 2) || (intelligence <= 2 && intelligence === minIntelligence);
-        if (isEligibleForPenalty && Math.random() < PENALTY_CHANCE) {
-            movementThisTick = -3;
+        if (Math.random() < Math.max(0, BASE_PENALTY_CHANCE - (racer.stats.intelligence * INTELLIGENCE_DEFENSE))) {
+            racer.position -= potentialMovement * PENALTY_SPEED_RATIO;
         }
-
-        racer.position += movementThisTick;
-
+        
         const horseElement = document.getElementById(`horse-${racer.originalIndex}`);
-        if(horseElement) {
-            horseElement.style.left = `${racer.position}%`;
-        }
+        if(horseElement) horseElement.style.left = `${racer.position}%`;
     });
 
-    isFirstTick = false;
-    raceTickCounter++; // ✅ 매 턴마다 카운터 1 증가
-
-    updateRankingsDisplay(sortedRacersForRank);
-
-    const leadPosition = sortedRacersForRank[0].position;
+    updateRankingsDisplay(sortedRacers);
     const cameraTargetPos = (leadPosition / 100) * DOM.racetrack.offsetWidth - (DOM.camera.offsetWidth * 0.4);
-    if (cameraTargetPos > 0) {
-        DOM.racetrack.style.transform = `translateX(-${cameraTargetPos}px)`;
-    }
+    if (cameraTargetPos > 0) DOM.racetrack.style.transform = `translateX(-${cameraTargetPos}px)`;
 
-    const winner = sortedRacersForRank[0].position >= actualFinishPosition ? sortedRacersForRank[0] : null;
+    const winner = sortedRacers[0].position >= actualFinishPosition ? sortedRacers[0] : null;
 
     if (winner) {
         clearInterval(raceInterval);
@@ -104,7 +149,7 @@ function runRace(actualFinishPosition) {
     }
 }
 
-
+// ... 이하 코드 동일 ...
 async function startCountdown(actualFinishPosition) {
     DOM.countdownDisplay.style.display = 'block';
     for (let i = 3; i > 0; i--) {
@@ -120,7 +165,6 @@ async function startCountdown(actualFinishPosition) {
     raceInterval = setInterval(() => runRace(actualFinishPosition), 100);
 }
 
-
 function updateRacersList() {
     DOM.racersList.innerHTML = '';
     racers.forEach((racer, index) => {
@@ -129,7 +173,6 @@ function updateRacersList() {
         DOM.racersList.appendChild(li);
     });
 }
-
 
 function updateRankingsDisplay(sortedRacers) {
     const rankEmojis = ['🥇', '🥈', '🥉'];
@@ -143,7 +186,6 @@ function updateRankingsDisplay(sortedRacers) {
         `;
     }).join('');
 }
-
 
 export function initRaceMode(menuData) {
     menuData.forEach(menu => {
@@ -226,12 +268,13 @@ export function initRaceMode(menuData) {
                 ...restaurantData,
                 user: userName,
                 position: 0,
-                currentSpeed: 0,
                 stats: stats,
-                originalIndex: racers.length
+                originalIndex: racers.length,
+                currentLane: racers.length,
+                stunnedUntilTick: 0,
+                // ✅ 수정: 각 말이 개별적으로 장애물 통과 여부를 기록하는 것을 삭제
             });
             updateRacersList();
-
             DOM.racerNameInput.value = '';
             DOM.statRows.forEach(row => {
                 const statInput = row.querySelector('.stat-input');
@@ -240,7 +283,6 @@ export function initRaceMode(menuData) {
                 statBoxes.forEach(box => box.classList.remove('filled'));
             });
             checkStatButtons();
-
             if (racers.length >= 2) DOM.startRaceBtn.style.display = 'block';
         }
     });
@@ -252,22 +294,20 @@ export function initRaceMode(menuData) {
         DOM.racetrack.style.transform = 'translateX(0px)';
         DOM.raceRankings.innerHTML = '';
         DOM.raceRankings.style.display = 'block';
-
-        isFirstTick = true;
-        raceTickCounter = 0; // ✅ 경주 시작 시 턴 카운터 초기화
+        raceTickCounter = 0;
 
         const racetrackWidth = DOM.racetrack.offsetWidth;
         const horseWidthPercent = (HORSE_WIDTH_PX / racetrackWidth) * 100;
-        const actualStartPosition = START_LINE_PERCENT - horseWidthPercent;
         const actualFinishPosition = FINISH_LINE_PERCENT - horseWidthPercent;
-
+        const actualStartPosition = START_LINE_PERCENT - horseWidthPercent;
         const totalRacersHeight = racers.length * LANE_HEIGHT;
         const verticalOffset = (DOM.camera.offsetHeight - totalRacersHeight) / 2;
+        
+        lanesData = [];
 
         racers.forEach((racer, index) => {
             racer.position = actualStartPosition;
-            
-            racer.currentSpeed = BASE_SPEED;
+            racer.currentLane = index;
 
             const lane = document.createElement('div');
             lane.className = 'lane';
@@ -278,9 +318,26 @@ export function initRaceMode(menuData) {
             horse.className = `horse horse-color-${index}`;
             horse.id = `horse-${index}`;
             horse.style.top = `${verticalOffset + (index * LANE_HEIGHT) + (LANE_HEIGHT / 2)}px`;
-            horse.style.left = `${actualStartPosition}%`;
+            horse.style.left = `${racer.position}%`;
             horse.innerHTML = `<span class="horse-emoji">🐎</span><span class="horse-name-label">${racer.user}</span>`;
             DOM.racetrack.appendChild(horse);
+
+            const obstacles = [];
+            for (let i = 0; i < OBSTACLES_PER_LANE; i++) {
+                const position = Math.random() * (OBSTACLE_ZONE_END - OBSTACLE_ZONE_START) + OBSTACLE_ZONE_START;
+                const obstacleId = `obstacle-${index}-${i}`;
+                // ✅ 수정: 장애물 자체에 cleared 상태를 포함
+                obstacles.push({ id: obstacleId, position: position, cleared: false });
+
+                const obstacleEl = document.createElement('div');
+                obstacleEl.className = 'obstacle';
+                obstacleEl.id = obstacleId;
+                obstacleEl.style.left = `${position}%`;
+                obstacleEl.style.top = `${verticalOffset + (index * LANE_HEIGHT) + (LANE_HEIGHT / 2)}px`;
+                obstacleEl.innerHTML = '';
+                DOM.racetrack.appendChild(obstacleEl);
+            }
+            lanesData.push({ obstacles: obstacles });
         });
         
         startCountdown(actualFinishPosition);
@@ -302,6 +359,7 @@ export function initRaceMode(menuData) {
         DOM.raceAgainBtn.style.display = 'none';
         DOM.raceSetup.style.display = 'block';
         racers = [];
+        lanesData = [];
         updateRacersList();
         DOM.startRaceBtn.style.display = 'none';
         DOM.countdownDisplay.textContent = '';
