@@ -23,7 +23,7 @@ const ACCEL_MODIFIER = 0.0007;
 const INTELLIGENCE_DEFENSE = 0.01;
 const PENALTY_SPEED_RATIO = 5.0;
 const BASE_PENALTY_CHANCE = 0.05;
-const INTELLIGENCE_LOOKAHEAD_DISTANCE = 5.0;
+const INTELLIGENCE_LOOKAHEAD_DISTANCE = 3.0; // ✅ 수정: 돌 탐지 거리 감소
 const LANE_CHANGE_CHANCE_PER_INTELLIGENCE = 0.10; 
 
 // 힘 스탯 (장애물 돌파) 관련 상수
@@ -36,6 +36,7 @@ const UNEXPECTED_MODIFIER = 0.05;
 const OBSTACLES_PER_LANE = 3;
 const OBSTACLE_ZONE_START = 20;
 const OBSTACLE_ZONE_END = 85;
+const MIN_OBSTACLE_DISTANCE = 15; // 장애물 사이의 최소 거리 (%)
 const MAX_STUN_DURATION_TICKS = 20;
 const STUN_REDUCTION_PER_STRENGTH = 4;
 
@@ -54,10 +55,12 @@ function runRace(actualFinishPosition) {
 
         const oldPosition = racer.position;
 
-        // 지능 스탯의 '회피 기동' 로직
-        const upcomingObstacle = lanesData[racer.currentLane].obstacles.find(obs => 
-            !obs.cleared && obs.position > racer.position && (obs.position - racer.position) < INTELLIGENCE_LOOKAHEAD_DISTANCE
-        );
+        // ✅ 수정: 화면에 보이는(display:none이 아닌) 장애물만 탐지
+        const upcomingObstacle = lanesData[racer.currentLane].obstacles.find(obs => {
+            const obsElement = document.getElementById(obs.id);
+            return obsElement && obsElement.style.display !== 'none' && // 화면에 보이는 돌만 감지
+                   obs.position > racer.position && (obs.position - racer.position) < INTELLIGENCE_LOOKAHEAD_DISTANCE;
+        });
 
         if (upcomingObstacle) {
             const changeChance = racer.stats.intelligence * LANE_CHANGE_CHANCE_PER_INTELLIGENCE;
@@ -65,9 +68,12 @@ function runRace(actualFinishPosition) {
                 let clearLaneIndex = -1;
                 for (let i = 0; i < lanesData.length; i++) {
                     if (i === racer.currentLane) continue;
-                    const isLaneClear = !lanesData[i].obstacles.some(obs => 
-                        !obs.cleared && Math.abs(obs.position - upcomingObstacle.position) < 5
-                    );
+                    // ✅ 수정: 레인이 비어있는지 확인할 때도 화면에 보이는 돌이 없는지 체크
+                    const isLaneClear = !lanesData[i].obstacles.some(obs => {
+                        const otherObsElement = document.getElementById(obs.id);
+                        return otherObsElement && otherObsElement.style.display !== 'none' && // 다른 레인에 보이는 돌이 없는지
+                               Math.abs(obs.position - upcomingObstacle.position) < 5; // 비슷한 위치에
+                    });
                     if (isLaneClear) {
                         clearLaneIndex = i;
                         break;
@@ -82,8 +88,7 @@ function runRace(actualFinishPosition) {
                         const verticalOffset = (DOM.camera.offsetHeight - totalRacersHeight) / 2;
                         horseElement.style.top = `${verticalOffset + (clearLaneIndex * LANE_HEIGHT) + (LANE_HEIGHT / 2)}px`;
                     }
-                    // ✅ 수정: 회피한 장애물은 모두에게 '제거됨'으로 처리
-                    upcomingObstacle.cleared = true; 
+                    // ✅ 수정: 회피는 clearedObstacleIds에 추가하지 않습니다. 돌은 다른 말에게 여전히 유효해야 하므로.
                 }
             }
         }
@@ -111,9 +116,9 @@ function runRace(actualFinishPosition) {
         racer.position += potentialMovement;
         
         lanesData[racer.currentLane].obstacles.forEach((obstacle, obsIndex) => {
-            // ✅ 수정: 장애물 자체의 cleared 상태를 체크
-            if (!obstacle.cleared && oldPosition < obstacle.position && racer.position >= obstacle.position) {
-                const obstacleEl = document.getElementById(obstacle.id);
+            const obstacleEl = document.getElementById(obstacle.id);
+            // ✅ 수정: 화면에 보이는(display:none이 아닌) 장애물만 충돌 체크
+            if (obstacleEl && obstacleEl.style.display !== 'none' && oldPosition < obstacle.position && racer.position >= obstacle.position) {
                 
                 if (racer.stats.strength >= 5) {
                     racer.position += racer.stats.strength * STRENGTH_JUMP_BONUS;
@@ -122,9 +127,9 @@ function runRace(actualFinishPosition) {
                     racer.position = obstacle.position;
                 }
                 
-                // ✅ 수정: 한번 부딪힌 장애물은 모두에게 '제거됨'으로 처리
-                obstacle.cleared = true;
+                // ✅ 수정: 충돌 시 장애물 즉시 제거 (display: none)
                 if (obstacleEl) obstacleEl.style.display = 'none';
+                // clearedObstacleIds는 이제 사용하지 않습니다. 장애물 자체의 display 상태로 관리.
             }
         });
 
@@ -272,7 +277,7 @@ export function initRaceMode(menuData) {
                 originalIndex: racers.length,
                 currentLane: racers.length,
                 stunnedUntilTick: 0,
-                // ✅ 수정: 각 말이 개별적으로 장애물 통과 여부를 기록하는 것을 삭제
+                // clearedObstacleIds는 이제 필요 없습니다. 장애물 DOM 요소의 display 상태로 관리합니다.
             });
             updateRacersList();
             DOM.racerNameInput.value = '';
@@ -308,6 +313,7 @@ export function initRaceMode(menuData) {
         racers.forEach((racer, index) => {
             racer.position = actualStartPosition;
             racer.currentLane = index;
+            // clearedObstacleIds는 이제 racer 객체에 저장되지 않으므로 초기화할 필요가 없습니다.
 
             const lane = document.createElement('div');
             lane.className = 'lane';
@@ -324,15 +330,27 @@ export function initRaceMode(menuData) {
 
             const obstacles = [];
             for (let i = 0; i < OBSTACLES_PER_LANE; i++) {
-                const position = Math.random() * (OBSTACLE_ZONE_END - OBSTACLE_ZONE_START) + OBSTACLE_ZONE_START;
+                let newPosition;
+                let positionIsTooClose;
+                do {
+                    positionIsTooClose = false;
+                    newPosition = Math.random() * (OBSTACLE_ZONE_END - OBSTACLE_ZONE_START) + OBSTACLE_ZONE_START;
+                    for (const obs of obstacles) {
+                        if (Math.abs(newPosition - obs.position) < MIN_OBSTACLE_DISTANCE) {
+                            positionIsTooClose = true;
+                            break;
+                        }
+                    }
+                } while (positionIsTooClose);
+
                 const obstacleId = `obstacle-${index}-${i}`;
-                // ✅ 수정: 장애물 자체에 cleared 상태를 포함
-                obstacles.push({ id: obstacleId, position: position, cleared: false });
+                // 장애물 객체에서 cleared 속성 제거 (더 이상 필요 없음)
+                obstacles.push({ id: obstacleId, position: newPosition });
 
                 const obstacleEl = document.createElement('div');
                 obstacleEl.className = 'obstacle';
                 obstacleEl.id = obstacleId;
-                obstacleEl.style.left = `${position}%`;
+                obstacleEl.style.left = `${newPosition}%`;
                 obstacleEl.style.top = `${verticalOffset + (index * LANE_HEIGHT) + (LANE_HEIGHT / 2)}px`;
                 obstacleEl.innerHTML = '';
                 DOM.racetrack.appendChild(obstacleEl);
@@ -359,7 +377,7 @@ export function initRaceMode(menuData) {
         DOM.raceAgainBtn.style.display = 'none';
         DOM.raceSetup.style.display = 'block';
         racers = [];
-        lanesData = [];
+        lanesData = []; // lanesData도 초기화
         updateRacersList();
         DOM.startRaceBtn.style.display = 'none';
         DOM.countdownDisplay.textContent = '';

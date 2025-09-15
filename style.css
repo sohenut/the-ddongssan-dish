@@ -8,7 +8,7 @@ body {
     background-color: #f7f9fc;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: flex-start; /* 상단 정렬로 변경, 중앙 정렬 시 모바일에서 하단이 짤릴 수 있음 */
     min-height: 100vh;
     margin: 0;
     padding: 20px;
@@ -69,7 +69,7 @@ header p {
 .result-card.jackpot {
     border-color: #f1c40f;
     background-color: #fffbeb;
-    animation: jackpot-glow 1s ease-in-out;
+    animation: jackpot-glow 1s ease-in-out forwards; /* 애니메이션 한 번 실행 후 유지 */
 }
 
 .result-card.failure {
@@ -144,6 +144,8 @@ header p {
     gap: 8px;
     margin-bottom: 30px;
     width: 100%;
+    /* ✅ 추가: 화면이 좁을 때 버튼들이 다음 줄로 넘어가도록 설정 */
+    flex-wrap: wrap; 
 }
 
 .category-btn {
@@ -158,6 +160,8 @@ header p {
     transition: all 0.2s ease-in-out;
     flex-shrink: 1;
     white-space: nowrap;
+    /* ✅ 추가: 줄바꿈될 때 버튼들 사이의 상하 간격 */
+    margin-bottom: 8px;
 }
 
 .category-btn.active {
@@ -186,7 +190,7 @@ header p {
 
 .reel {
     background-color: white;
-    width: 110px;
+    width: 110px; /* 고정 너비. 미디어 쿼리에서 변경 */
     height: 60px;
     border-radius: 10px;
     font-size: 1.5rem;
@@ -367,21 +371,21 @@ header p {
     height: 300px;
     border-radius: 10px;
     overflow: hidden;
-    background-color: #D2B48C;
+    background-color: #D2B48C; /* 경마 트랙 배경색 */
 }
 
 #racetrack {
     position: absolute;
-    width: 400%;
+    width: 400%; /* 경마 트랙의 전체 너비는 고정 */
     height: 100%;
     transition: transform 0.5s linear;
 }
 
 .lane {
     position: absolute;
-    width: 95%;
+    width: 95%; /* 트랙 폭에 대한 상대적인 레인 폭 */
     height: 40px;
-    border-bottom: 2px dashed rgba(255, 255, 255, 0.5);
+    border-bottom: 2px dashed rgba(255, 255, 255, 0.5); /* 흰색 점선 */
 }
 
 #start-line {
@@ -389,7 +393,7 @@ header p {
     left: 5%;
     top: 0;
     bottom: 0;
-    border-left: 3px dashed rgba(0, 128, 0, 0.7);
+    border-left: 3px dashed rgba(0, 128, 0, 0.7); /* 시작선: 초록 점선 */
     z-index: 2;
 }
 
@@ -398,7 +402,7 @@ header p {
     right: 5%;
     top: 0;
     bottom: 0;
-    border-left: 3px dashed red;
+    border-left: 3px dashed red; /* 결승선: 빨간 점선 */
     z-index: 4;
 }
 
@@ -407,8 +411,7 @@ header p {
     display: flex;
     align-items: center;
     transform: translateY(-50%);
-    /* ✅ 수정: top 속성도 부드럽게 변하도록 transition 추가 */
-    transition: left 0.1s linear, top 0.3s ease-in-out;
+    transition: left 0.1s linear, top 0.3s ease-in-out; /* top 속성도 부드럽게 변하도록 transition 추가 */
     z-index: 3;
     font-size: 2rem;
     height: 40px;
@@ -436,7 +439,11 @@ header p {
     border-radius: 50%;
     align-items: center;
     justify-content: center;
-    transform: scaleX(-1);
+    transform: scaleX(-1); /* 말이 왼쪽을 보도록 뒤집기 */
+}
+
+.horse.unexpected-boost-effect .horse-emoji {
+    animation: unexpected-boost 0.4s ease-out forwards;
 }
 
 .horse-color-0 .horse-emoji { background-color: #e74c3c; color: white; }
@@ -452,6 +459,18 @@ header p {
 .horse-color-text-3 { color: #f1c40f; } /* 노랑 */
 .horse-color-text-4 { color: #9b59b6; } /* 보라 */
 .horse-color-text-5 { color: #e67e22; } /* 주황 */
+
+.obstacle {
+    position: absolute;
+    transform: translateY(-50%);
+    z-index: 3;
+    opacity: 0.8;
+    width: 1.8rem;
+    height: 1.8rem;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNiAzNiI+PGNpcmNsZSBmaWxsPSIjOUNBNEFGIiBjeD0iMjYuNSIgY3k9IjI2LjUiIHI9IjcuNSIvPjxjaXJjbGUgZmlsbD0iI0E5QkJDMyIgY3g9IjE1LjkiIGN5PSIyOC44IiByPSI3LjIiLz48Y2lyY2xlIGZpbGw9IiM4QzkwOTUiIGN4PSI5LjUiIGN5PSIxOC41IiByPSI5LjUiLz48Y2lyY2xlIGZpbGw9IiNBN0I4QkYiIGN4PSIyMi41IiBjeT0iOS41IiByPSI5LjUiLz48L3N2Zz4=');
+    background-size: contain;
+    background-repeat: no-repeat;
+}
 
 #countdown-display {
     position: absolute;
@@ -543,32 +562,208 @@ header p {
     100% { box-shadow: 0 0 5px #f1c40f; }
 }
 
-/* ✅ 추가된 부분: 의외성 부스트 시각 효과 */
-.horse.unexpected-boost-effect .horse-emoji {
-    animation: unexpected-boost 0.5s ease-in-out;
-}
-
 @keyframes unexpected-boost {
     0%, 100% {
         box-shadow: 0 0 20px rgba(231, 76, 60, 0.9);
-        transform: scale(1.1);
+        transform: scale(1.1) scaleX(-1); /* 말 이모지는 원래 뒤집혀 있으므로 함께 조정 */
     }
     50% {
         box-shadow: 0 0 35px rgba(241, 196, 15, 0.9);
-        transform: scale(1.25);
+        transform: scale(1.25) scaleX(-1);
     }
 }
 
-.obstacle {
-    position: absolute;
-    transform: translateY(-50%);
-    z-index: 3;
-    opacity: 0.8;
+
+/* =================================
+   6. 반응형 디자인 (Responsive Design)
+   ================================= */
+
+/* 화면 너비가 480px 이하일 때 적용될 스타일 (대부분의 스마트폰 세로 모드) */
+@media (max-width: 480px) {
+    body {
+        padding: 10px; /* 스마트폰에서는 좌우 여백을 줄여 공간 확보 */
+        align-items: flex-start; /* 모바일에서 content가 중앙이 아닌 상단부터 시작하도록 */
+    }
+
+    #app-container {
+        padding: 20px; /* 스마트폰에서는 내부 여백을 살짝 줄임 */
+        border-radius: 15px; /* 모바일에서 둥근 정도 살짝 줄임 */
+    }
+
+    header h1 {
+        font-size: 2rem; /* 제목 글자 크기를 줄여서 여러 줄로 나뉘는 것을 방지 */
+    }
+
+    header p {
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+
+    .mode-tab {
+        padding: 12px 8px; /* 탭 버튼 패딩 줄이기 */
+        font-size: 0.9rem;
+    }
+
+    #category-buttons {
+        gap: 5px; /* 카테고리 버튼 간격 줄이기 */
+        margin-bottom: 20px;
+    }
+
+    .category-btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        margin-bottom: 5px; /* 줄바꿈 시 간격도 줄이기 */
+    }
+
+    .result-card {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .restaurant-name {
+        font-size: 1.6rem; /* 결과 카드에 나오는 식당 이름 크기 줄이기 */
+    }
+    .restaurant-info {
+        font-size: 0.9rem;
+    }
+
+    .btn {
+        font-size: 1.2rem;
+        padding: 15px 30px;
+        border-radius: 10px;
+    }
     
-    /* ✅ 수정: 크기를 직접 지정하고, 배경에 SVG 이미지를 삽입 */
-    width: 1.8rem;
-    height: 1.8rem;
-    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNiAzNiI+PGNpcmNsZSBmaWxsPSIjOUNBNEFGIiBjeD0iMjYuNSIgY3k9IjI2LjUiIHI9IjcuNSIvPjxjaXJjbGUgZmlsbD0iI0E5QkJDMyIgY3g9IjE1LjkiIGN5PSIyOC44IiByPSI3LjIiLz48Y2lyY2xlIGZpbGw9IiM4QzkwOTUiIGN4PSI5LjUiIGN5PSIxOC41IiByPSI5LjUiLz48Y2lyY2xlIGZpbGw9IiNBN0I4QkYiIGN4PSIyMi41IiBjeT0iOS41IiByPSI5LjUiLz48L3N2Zz4=');
-    background-size: contain;
-    background-repeat: no-repeat;
+    /* 슬롯머신이 화면 밖으로 삐져나가는 문제 해결 */
+    #slot-machine {
+        padding: 10px;
+        gap: 5px; /* 릴 사이 간격 줄이기 */
+        border-width: 2px;
+    }
+
+    .reel {
+        flex: 1; /* 고정된 너비 대신, 가용한 공간을 1:1:1로 나눠가짐 */
+        width: auto; /* 너비 자동 조절 */
+        font-size: 1.2rem; /* 내부 글자 크기도 함께 줄임 */
+        padding: 8px 5px;
+        height: 45px; /* 릴 높이도 줄임 */
+        border-radius: 8px;
+    }
+
+    /* 경마 모드에서 스탯 UI가 너무 빡빡해 보이는 문제 개선 */
+    #race-setup {
+        padding: 15px;
+    }
+
+    #race-setup input[type="text"], 
+    #race-setup select, 
+    #race-setup button:not(.stat-btn) {
+        padding: 10px;
+        font-size: 1rem;
+        margin-bottom: 8px;
+    }
+
+    #stat-allocator {
+        margin: 15px 0;
+        padding: 10px;
+    }
+
+    .stat-row {
+        font-size: 0.9rem;
+        margin-bottom: 6px;
+    }
+
+    .stat-row label {
+        flex-basis: 45px; /* 라벨 너비를 살짝 줄임 */
+        margin-right: 5px;
+    }
+
+    .stat-boxes {
+        height: 16px;
+        gap: 1px;
+    }
+
+    .stat-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 0.9rem;
+        margin-left: 3px;
+    }
+
+    #stat-points-left {
+        font-size: 1rem;
+        margin-top: 10px;
+    }
+
+    #stat-points-left span {
+        font-size: 1.1rem;
+    }
+
+    #add-racer-btn, #start-race-btn, #race-again-btn {
+        font-size: 1.1rem;
+        padding: 12px;
+        margin-top: 8px;
+    }
+
+    #racers-list li {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    #camera {
+        height: 200px; /* 경마 트랙 높이 줄이기 */
+        margin-top: 15px;
+    }
+
+    .horse {
+        font-size: 1.5rem; /* 말 이모지 크기 줄이기 */
+        height: 30px;
+    }
+
+    .horse-name-label {
+        font-size: 0.8rem;
+        padding: 2px 6px;
+        border-radius: 6px;
+        margin-right: 5px;
+    }
+
+    .horse-emoji {
+        width: 30px;
+        height: 30px;
+    }
+
+    .lane {
+        height: 30px; /* 레인 높이도 말 높이에 맞춰 줄임 */
+    }
+
+    .obstacle {
+        width: 1.5rem; /* 장애물 크기 줄이기 */
+        height: 1.5rem;
+    }
+
+    #countdown-display {
+        font-size: 3.5rem; /* 카운트다운 글자 크기 줄이기 */
+        text-shadow: 0 0 10px rgba(231, 76, 60, 0.8);
+    }
+
+    #race-rankings {
+        margin-top: 15px;
+        padding: 8px;
+        margin-bottom: 15px;
+    }
+
+    .rank-item {
+        font-size: 0.9rem;
+        padding: 6px 10px;
+    }
+
+    #music-controls {
+        top: 10px;
+        right: 10px;
+    }
+    #music-controls button {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
 }
