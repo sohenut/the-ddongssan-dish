@@ -15,6 +15,15 @@ body {
     box-sizing: border-box;
 }
 
+/* ✅ 1. 반응형 레이아웃 문제를 해결하기 위해 이 부분을 추가했습니다. */
+#app-content {
+    /* body가 하던 역할을 그대로 물려받아 flex로 자식 요소를 정렬합니다. */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+}
+
 #app-container {
     width: 100%;
     max-width: 480px;
@@ -107,6 +116,11 @@ header p {
    ================================= */
 
 /* 3.1 모드 선택 UI (Mode Selection UI) */
+/* ✅ 2. 로딩 중 앱 콘텐츠를 확실히 숨기기 위해 이 부분을 추가했습니다. */
+#app-content.hidden {
+    display: none;
+}
+
 .mode-content.hidden {
     display: none;
 }
@@ -144,7 +158,6 @@ header p {
     gap: 8px;
     margin-bottom: 30px;
     width: 100%;
-    /* ✅ 추가: 화면이 좁을 때 버튼들이 다음 줄로 넘어가도록 설정 */
     flex-wrap: wrap; 
 }
 
@@ -160,7 +173,6 @@ header p {
     transition: all 0.2s ease-in-out;
     flex-shrink: 1;
     white-space: nowrap;
-    /* ✅ 추가: 줄바꿈될 때 버튼들 사이의 상하 간격 */
     margin-bottom: 8px;
 }
 
@@ -765,5 +777,58 @@ header p {
         width: 40px;
         height: 40px;
         font-size: 1.2rem;
+    }
+}
+
+/* =================================
+   7. 로딩 오버레이 (Loading Overlay)
+   ================================= */
+#loading-overlay {
+    /* 화면 전체를 덮도록 설정 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    /* 내용물을 중앙에 위치시키기 위한 flex 설정 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
+    /* 배경색은 body와 동일하게 */
+    background-color: #f7f9fc;
+    /* 다른 요소들보다 위에 보이도록 z-index 설정 */
+    z-index: 9999;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    
+    /* 스피너 애니메이션 효과 */
+    border: 5px solid rgba(0, 0, 0, 0.1);
+    border-left-color: #3498db; /* 로딩 바 색상 */
+    
+    /* spin이라는 이름의 애니메이션을 1초 동안 무한 반복 */
+    animation: spin 1s linear infinite;
+}
+
+#loading-overlay p {
+    margin-top: 20px;
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #555;
+}
+
+/* 스피너 회전 애니메이션 키프레임 */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
     }
 }

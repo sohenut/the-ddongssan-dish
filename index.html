@@ -4,141 +4,147 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>오늘 저녁 뭐 먹지? (여의동/반월동)</title>
-    
     <link rel="stylesheet" href="style.css">
-    
 </head>
 <body>
 
-<audio id="bgm" loop src="background.mp3"></audio>
-<div id="music-controls">
-    <button id="music-btn">🎵</button>
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <p>맛집 목록을 불러오는 중...</p>
 </div>
-<div id="app-container">
-    <header>
-        <h1>오늘 저녁 뭐 먹지? 😋</h1>
-        <p>여의동 & 반월동 맛집 추천!</p>
-    </header>
 
-    <div id="mode-tabs">
-        <button class="mode-tab active" data-mode="simple">👇 바로 추천</button>
-        <button class="mode-tab" data-mode="slot">🎰 슬롯머신</button>
-        <button class="mode-tab" data-mode="race">🏇 맛집 경마</button>
-    </div>
-    
-    <div id="category-buttons">
-        <button class="category-btn active" data-category="전체"># 전체</button>
-        <button class="category-btn" data-category="한식"># 한식</button>
-        <button class="category-btn" data-category="중식"># 중식</button>
-        <button class="category-btn" data-category="양식"># 치킨&피자&버거</button>
-        <button class="category-btn" data-category="분식"># 분식</button>
+<div id="app-content" class="hidden">
+    <audio id="bgm" loop src="background.mp3"></audio>
+    <div id="music-controls">
+        <button id="music-btn">🎵</button>
     </div>
 
-    <div id="simple-mode-content" class="mode-content">
-        <div class="result-card" id="simple-result-card">
-            <h2 class="restaurant-name">버튼을 눌러주세요!</h2>
-            <p class="restaurant-info"></p>
-            <div class="map-view" id="simple-map"></div>
-        </div>
-        <button id="recommend-btn" class="btn">바로 추천받기</button>
-    </div>
+    <main id="app-container">
+        <header>
+            <h1>오늘 저녁 뭐 먹지? 😋</h1>
+            <p>여의동 & 반월동 맛집 추천!</p>
+        </header>
 
-    <div id="slot-mode-content" class="mode-content hidden">
-        <div id="slot-machine">
-            <div class="reel" id="reel1"></div>
-            <div class="reel" id="reel2"></div>
-            <div class="reel" id="reel3"></div>
-        </div>
-        <div class="result-card" id="slot-result-card" style="display:none;">
-            <h2 class="restaurant-name"></h2>
-            <p class="restaurant-info"></p>
-            <div class="map-view" id="slot-map"></div>
-        </div>
-        <button id="slot-btn" class="btn">슬롯머신으로 추천!</button>
-    </div>
-
-    <div id="race-mode-content" class="mode-content hidden">
-        <div id="racetrack-container">
-            <div id="race-setup">
-                <input type="text" id="racer-name" placeholder="이름 (예: 철수)">
-                <select id="restaurant-select"></select>
-
-                <div id="stat-allocator">
-                    <div class="stat-row">
-                        <label>속도</label>
-                        <div class="stat-boxes" data-stat-name="speed">
-                            <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
-                            <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
-                        </div>
-                        <input type="hidden" class="stat-input" id="stat-speed" value="0" min="0" max="10">
-                        <button class="stat-btn stat-minus" disabled>-</button>
-                        <button class="stat-btn stat-plus">+</button>
-                    </div>
-                    <div class="stat-row">
-                        <label>가속도</label>
-                        <div class="stat-boxes" data-stat-name="acceleration">
-                            <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
-                            <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
-                        </div>
-                        <input type="hidden" class="stat-input" id="stat-acceleration" value="0" min="0" max="10">
-                        <button class="stat-btn stat-minus" disabled>-</button>
-                        <button class="stat-btn stat-plus">+</button>
-                    </div>
-                    <div class="stat-row">
-                        <label>힘</label>
-                        <div class="stat-boxes" data-stat-name="strength">
-                            <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
-                            <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
-                        </div>
-                        <input type="hidden" class="stat-input" id="stat-strength" value="0" min="0" max="10">
-                        <button class="stat-btn stat-minus" disabled>-</button>
-                        <button class="stat-btn stat-plus">+</button>
-                    </div>
-                    <div class="stat-row">
-                        <label>지능</label>
-                        <div class="stat-boxes" data-stat-name="intelligence">
-                            <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
-                            <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
-                        </div>
-                        <input type="hidden" class="stat-input" id="stat-intelligence" value="0" min="0" max="10">
-                        <button class="stat-btn stat-minus" disabled>-</button>
-                        <button class="stat-btn stat-plus">+</button>
-                    </div>
-                    <div class="stat-row">
-                        <label>의외성</label>
-                        <div class="stat-boxes" data-stat-name="unexpectedness">
-                            <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
-                            <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
-                        </div>
-                        <input type="hidden" class="stat-input" id="stat-unexpectedness" value="0" min="0" max="10">
-                        <button class="stat-btn stat-minus" disabled>-</button>
-                        <button class="stat-btn stat-plus">+</button>
-                    </div>
-                    <div id="stat-points-left">남은 포인트: <span>10</span></div>
-                </div>
-                
-                <button id="add-racer-btn">경주마 등록</button>
-                <ul id="racers-list"></ul>
-                <button id="start-race-btn" class="btn" style="display:none;">경주 시작!</button>
-            </div>
-            <div id="camera" style="display:none;">
-                <div id="racetrack">
-                    <div id="start-line"></div>
-                    <div id="finish-line"></div>
-                </div>
-                <div id="countdown-display"></div>
-            </div>
-            <div id="race-rankings"></div>
-            </div>
-
-        <div class="result-card" id="race-result-card" style="display: none;">
-            <h2 class="restaurant-name"></h2>
-            <p class="restaurant-info"></p>
-            <div class="map-view" id="race-map"></div>
+        <div id="mode-tabs">
+            <button class="mode-tab active" data-mode="simple">👇 바로 추천</button>
+            <button class="mode-tab" data-mode="slot">🎰 슬롯머신</button>
+            <button class="mode-tab" data-mode="race">🏇 맛집 경마</button>
         </div>
         
-        <button id="race-again-btn" class="btn" style="display: none;">다시하기 🔁</button>
-    </div>
+        <div id="category-buttons">
+            <button class="category-btn active" data-category="전체"># 전체</button>
+            <button class="category-btn" data-category="한식"># 한식</button>
+            <button class="category-btn" data-category="중식"># 중식</button>
+            <button class="category-btn" data-category="양식"># 치킨&피자&버거</button>
+            <button class="category-btn" data-category="분식"># 분식</button>
+        </div>
+
+        <section id="simple-mode-content" class="mode-content">
+            <div class="result-card" id="simple-result-card">
+                <h2 class="restaurant-name">버튼을 눌러주세요!</h2>
+                <p class="restaurant-info"></p>
+                <div class="map-view" id="simple-map"></div>
+            </div>
+            <button id="recommend-btn" class="btn">바로 추천받기</button>
+        </section>
+
+        <section id="slot-mode-content" class="mode-content hidden">
+            <div id="slot-machine">
+                <div class="reel" id="reel1"></div>
+                <div class="reel" id="reel2"></div>
+                <div class="reel" id="reel3"></div>
+            </div>
+            <div class="result-card" id="slot-result-card" style="display:none;">
+                <h2 class="restaurant-name"></h2>
+                <p class="restaurant-info"></p>
+                <div class="map-view" id="slot-map"></div>
+            </div>
+            <button id="slot-btn" class="btn">슬롯머신으로 추천!</button>
+        </section>
+
+        <section id="race-mode-content" class="mode-content hidden">
+            <div id="racetrack-container">
+                <div id="race-setup">
+                    <input type="text" id="racer-name" placeholder="이름 (예: 철수)">
+                    <select id="restaurant-select"></select>
+
+                    <div id="stat-allocator">
+                        <div class="stat-row">
+                            <label>속도</label>
+                            <div class="stat-boxes" data-stat-name="speed">
+                                <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
+                                <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
+                            </div>
+                            <input type="hidden" class="stat-input" id="stat-speed" value="0" min="0" max="10">
+                            <button class="stat-btn stat-minus" disabled>-</button>
+                            <button class="stat-btn stat-plus">+</button>
+                        </div>
+                        <div class="stat-row">
+                            <label>가속도</label>
+                            <div class="stat-boxes" data-stat-name="acceleration">
+                               <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
+                               <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
+                            </div>
+                            <input type="hidden" class="stat-input" id="stat-acceleration" value="0" min="0" max="10">
+                            <button class="stat-btn stat-minus" disabled>-</button>
+                            <button class="stat-btn stat-plus">+</button>
+                        </div>
+                        <div class="stat-row">
+                            <label>힘</label>
+                            <div class="stat-boxes" data-stat-name="strength">
+                               <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
+                               <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
+                            </div>
+                            <input type="hidden" class="stat-input" id="stat-strength" value="0" min="0" max="10">
+                            <button class="stat-btn stat-minus" disabled>-</button>
+                            <button class="stat-btn stat-plus">+</button>
+                        </div>
+                        <div class="stat-row">
+                            <label>지능</label>
+                            <div class="stat-boxes" data-stat-name="intelligence">
+                               <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
+                               <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
+                            </div>
+                            <input type="hidden" class="stat-input" id="stat-intelligence" value="0" min="0" max="10">
+                            <button class="stat-btn stat-minus" disabled>-</button>
+                            <button class="stat-btn stat-plus">+</button>
+                        </div>
+                        <div class="stat-row">
+                            <label>의외성</label>
+                            <div class="stat-boxes" data-stat-name="unexpectedness">
+                               <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
+                               <div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div><div class="stat-box"></div>
+                            </div>
+                            <input type="hidden" class="stat-input" id="stat-unexpectedness" value="0" min="0" max="10">
+                            <button class="stat-btn stat-minus" disabled>-</button>
+                            <button class="stat-btn stat-plus">+</button>
+                        </div>
+                        <div id="stat-points-left">남은 포인트: <span>10</span></div>
+                    </div>
+                    
+                    <button id="add-racer-btn">경주마 등록</button>
+                    <ul id="racers-list"></ul>
+                    <button id="start-race-btn" class="btn" style="display:none;">경주 시작!</button>
+                </div>
+                <div id="camera" style="display:none;">
+                    <div id="racetrack">
+                        <div id="start-line"></div>
+                        <div id="finish-line"></div>
+                    </div>
+                    <div id="countdown-display"></div>
+                </div>
+                <div id="race-rankings"></div>
+                </div>
+
+            <div class="result-card" id="race-result-card" style="display: none;">
+                <h2 class="restaurant-name"></h2>
+                <p class="restaurant-info"></p>
+                <div class="map-view" id="race-map"></div>
+            </div>
+            
+            <button id="race-again-btn" class="btn" style="display: none;">다시하기 🔁</button>
+        </section>
+    </main>
 </div>
 
 <script type="module" src="script.js"></script>
